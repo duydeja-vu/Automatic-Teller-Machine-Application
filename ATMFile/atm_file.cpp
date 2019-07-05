@@ -13,8 +13,6 @@ void DeleteAccount(int);
 void PrintAllAccountInFormat();
 void DepositOrWithdraw(int, int);
 
-fstream file;
-
 // Tao moi tai khoan:
 // Nhap so tai khoan, ten chu tai khoan, loai tai khoan
 // va so du ban dau tu ban phim
@@ -60,8 +58,9 @@ void Account::Withdraw(int amount)
 void Account::PrintAccount() const
 {
 	cout << "\nSo tai khoan: " << account_number_;
-	cout << "\nTen chu tai khoan: ";
-	//your code here
+	cout << "\nTen chu tai khoan: " << name_;
+	cout << "\nSo du: " << balance_;
+	cout << "\nKieu tai khoan: " << type_;
 }
 
 // In ra thong tin tai khoan tren mot dong theo dinh dang
@@ -99,10 +98,9 @@ string Account::GetType()
 
 int main()
 {
-	
+
 	char menu_option;
 	int account_number; // Nhap tu ban phim
-	file.close();
 	do
 	{
 		system("cls");
@@ -165,13 +163,12 @@ int main()
 void SaveAccountToFile()
 {
 	Account account;
-	// fstream file;
+	fstream out_file;
 	account.CreateAccount();
-	file.open("account.dat", ios::binary|ios::app);
-	file.write(reinterpret_cast<char *>(&account), sizeof(Account));
-	file.close();
+	out_file.open("account.dat", ios::binary | ios::app);
+	out_file.write(reinterpret_cast<char *>(&account), sizeof(Account));
+	out_file.close();
 	cout << "Tao tai khoan thanh cong, nhan ENTER de tro lai menu chinh" << endl;
-	file.close();
 }
 
 // Tim va in tai khoan co so tai khoan la account_number (không in theo dinh dang)
@@ -180,30 +177,25 @@ void SearchAndPrintAccount(int account_number)
 {
 	Account account;
 	bool found = false;
-	// fstream in_file;
-
-	file.open("account.dat", ios::in|ios::binary);
-	if (!file)
+	fstream in_file;
+	in_file.open("account.dat", ios::binary | ios::in);
+	if (!in_file)
 	{
 		cout << "Khong tim thay file";
 		return;
 	}
 	cout << "\nKet qua tim kiem:\n";
-	while (file.read(reinterpret_cast<char *>(&account), sizeof(Account)))
+	while (in_file.read(reinterpret_cast<char *>(&account), sizeof(Account)))
 	{
 		if (account.GetAccountNumber() == account_number)
 		{
 			found = true;
-			cout << "So tai khoan: ";
-			cout << account.GetAccountNumber() << endl;
-			cout << "Ten chu tai khoan: ";
-			cout << account.GetName() << endl;
+			account.PrintAccount();
 		}
 	}
-
-	file.close();
 	if (found == false)
 		cout << "\n\nKhong tim thay tai khoan";
+	in_file.close();
 }
 
 // Tim tai khoan co so tai khoan la account_number (khong in theo dinh dang)
@@ -246,7 +238,7 @@ void DeleteAccount(int account_number)
 
 	if (!in_file)
 	{
-		//your code here
+
 		return;
 	}
 
@@ -302,7 +294,7 @@ void DepositOrWithdraw(int account_number, int option)
 	file.open("account.dat", ios::binary | ios::in | ios::out);
 	if (!file)
 	{
-		cout << "Khong tim thay tai khoan, nhan Enter de tro ve menu " << endl;
+		cout << "Khong tim thay file, nhan Enter de tro ve menu " << endl;
 		return;
 	}
 
@@ -311,6 +303,7 @@ void DepositOrWithdraw(int account_number, int option)
 		file.read(reinterpret_cast<char *>(&account), sizeof(Account));
 		if (account.GetAccountNumber() == account_number)
 		{
+			found = true;
 			account.PrintAccount();
 			if (option == 2)
 			{
@@ -318,6 +311,8 @@ void DepositOrWithdraw(int account_number, int option)
 				cout << "\n\nNhap so tien nop: ";
 				cin >> amount;
 				account.Deposit(amount);
+				file.seekp(file.tellg() - std::streamoff(sizeof(Account)));
+				file.write(reinterpret_cast<char *>(&account), sizeof(Account));
 			}
 			else if (option == 3)
 			{
@@ -325,11 +320,10 @@ void DepositOrWithdraw(int account_number, int option)
 				cout << "\n\nNhap so tien rut: ";
 				cin >> amount;
 				account.Withdraw(amount);
+				file.seekp(file.tellg() - std::streamoff(sizeof(Account)));
+				file.write(reinterpret_cast<char *>(&account), sizeof(Account));
 			}
-
-			//your code here
 			cout << "\n\n\t Giao dich thuc hien thanh cong";
-			found = true;
 		}
 	}
 
